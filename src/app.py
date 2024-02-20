@@ -75,6 +75,21 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
+@app.route('/users', methods=['GET'])
+def handle_users():
+    if request.method == 'GET':
+        response_body = {}
+        results = {}
+        users = db.session.execute(db.select(User)).scalars()
+        list_usuarios = []
+        for row in users:
+            list_usuarios.append(row.serialize())
+        results['users'] = list_usuarios
+        # Opcion 2: results['users'] = [row.serialize() for row in users]
+        response_body['message'] = 'Listado de usuarios'
+        response_body['results'] = results
+        return response_body, 200
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
