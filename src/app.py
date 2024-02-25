@@ -10,6 +10,7 @@ from api.models import db
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
+from flask_jwt_extended import JWTManager
 
 # from models import Person
 
@@ -31,6 +32,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 MIGRATE = Migrate(app, db, compare_type=True)
 db.init_app(app)
 
+
 # add the admin
 setup_admin(app)
 
@@ -39,6 +41,12 @@ setup_commands(app)
 
 # Add all endpoints form the API with a "api" prefix
 app.register_blueprint(api, url_prefix='/api')
+
+
+# Setup the Flask-JWT-Extended extension
+
+app.config["JWT_SECRET_KEY"] =os.getenv('JWT_SECRET')  # Leemos la semilla
+jwt = JWTManager(app)
 
 # Handle/serialize errors like a JSON object
 
@@ -66,6 +74,21 @@ def serve_any_other_file(path):
     response = send_from_directory(static_file_dir, path)
     response.cache_control.max_age = 0  # avoid cache memory
     return response
+
+@app.route('/users', methods=['GET'])
+def handle_users():
+    if request.method == 'GET':
+        response_body = {}
+        results = {}
+        users = db.session.execute(db.select(User)).scalars()
+        list_usuarios = []
+        for row in users:
+            list_usuarios.append(row.serialize())
+        results['users'] = list_usuarios
+        # Opcion 2: results['users'] = [row.serialize() for row in users]
+        response_body['message'] = 'Listado de usuarios'
+        response_body['results'] = results
+        return response_body, 200
 
 
 # this only runs if `$ python src/main.py` is executed
